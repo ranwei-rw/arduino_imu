@@ -296,7 +296,7 @@ void loop()
     mpu.resetFIFO();
     fifoCount = mpu.getFIFOCount();
     count = 3;
-    Serial.println(F("FIFO overflow!"));
+    //Serial.println(F("FIFO overflow!"));
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
   }
@@ -323,7 +323,7 @@ void loop()
 //    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
     mpu.dmpGetFullData(&aaWorld, &aaReal, ypr, &gravity, euler, &q, &aa, fifoBuffer);
     //  print info
-    if (count == 0)
+    if (count == 0 || count != 0)
     {
     Serial.print(q.w);
     Serial.print(F(" "));
@@ -331,25 +331,25 @@ void loop()
     Serial.print(F(" "));
     Serial.print(q.y);
     Serial.print(F(" "));
-    Serial.print(q.z);
-    Serial.println(F(" "));
-//    Serial.print(euler[0] * 180 / M_PI);
+    Serial.println(q.z);
+    //Serial.println(F(" "));
+    Serial.print(euler[0] * 180 / M_PI);
+    Serial.print(F(" "));
+    Serial.print(euler[1] * 180 / M_PI);
+    Serial.print(F(" "));
+    Serial.println(euler[2] * 180 / M_PI);
 //    Serial.print(F(" "));
-//    Serial.print(euler[1] * 180 / M_PI);
+    Serial.print(ypr[0] * 180 / M_PI);
+    Serial.print(F(" "));
+    Serial.print(ypr[1] * 180 / M_PI);
+    Serial.print(F(" "));
+    Serial.println(ypr[2] * 180 / M_PI);
 //    Serial.print(F(" "));
-//    Serial.print(euler[2] * 180 / M_PI);
-//    Serial.print(F(" "));
-//    Serial.print(ypr[0] * 180 / M_PI);
-//    Serial.print(F(" "));
-//    Serial.print(ypr[1] * 180 / M_PI);
-//    Serial.print(F(" "));
-//    Serial.print(ypr[2] * 180 / M_PI);
-//    Serial.print(F(" "));
-//    Serial.print(aaReal.x);
-//    Serial.print(F(" "));
-//    Serial.print(aaReal.y);
-//    Serial.print(F(" "));
-//    Serial.print(aaReal.z);
+    Serial.print(aaReal.x);
+    Serial.print(F(" "));
+    Serial.print(aaReal.y);
+    Serial.print(F(" "));
+    Serial.println(aaReal.z);
 //    Serial.print(F(" "));
     Serial.print(aaWorld.x);
     Serial.print(F(" "));
