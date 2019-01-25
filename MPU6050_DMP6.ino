@@ -130,7 +130,7 @@ uint8_t devStatus;      // return status after each device operation (0 = succes
 uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
-
+uint8_t count;
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorInt16 aa;         // [x, y, z]            accel sensor measurements
@@ -158,11 +158,12 @@ void dmpDataReady() {
 // ===                      INITIAL SETUP                       ===
 // ================================================================
 
-void setup() {
+void setup()
+{
   // join I2C bus (I2Cdev library doesn't do this automatically)
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
   Wire.begin();
-  Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+  Wire.setClock(100000); // 400kHz I2C clock. Comment this line if having compilation difficulties
 #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
   Fastwire::setup(400, true);
 #endif
@@ -222,7 +223,7 @@ void setup() {
     // set our DMP Ready flag so the main loop() function knows it's okay to use it
     Serial.println(F("DMP ready! Waiting for first interrupt..."));
     Serial.println(F("Output Format:"));
-    Serial.print(F("quat.w quat. quat.y quat.z euler[0] euler[1] euler[2] "));
+    Serial.print(F("q.w q.x q.y q.z euler[0] euler[1] euler[2] "));
     Serial.print(F("ypr[0] ypr[1] ypr[2] real_acc.x real_acc.y real_acc.z "));
     Serial.println(F("world_acc.x world_acc.y world_acc.z"));
     dmpReady = true;
@@ -238,6 +239,7 @@ void setup() {
     Serial.print(F("DMP Initialization failed (code "));
     Serial.print(devStatus);
     Serial.println(F(")"));
+    count = 0;
   }
 
   // configure LED for output
@@ -250,15 +252,23 @@ void setup() {
 // ===                    MAIN PROGRAM LOOP                     ===
 // ================================================================
 
-void loop() {
+void loop()
+{
   // if programming failed, don't try to do anything
-  if (!dmpReady) return;
+  if (!dmpReady)
+  {
+    return;
+  }
 
   // wait for MPU interrupt or extra packet(s) available
-  while (!mpuInterrupt && fifoCount < packetSize) {
-    if (mpuInterrupt && fifoCount < packetSize) {
+  while (!mpuInterrupt && fifoCount < packetSize)
+  {
+    //Serial.println(F("not ready."));
+    if (mpuInterrupt && fifoCount < packetSize)
+    {
       // try to get out of the infinite loop
       fifoCount = mpu.getFIFOCount();
+      
     }
     // other program behavior stuff here
     // .
@@ -280,14 +290,18 @@ void loop() {
   fifoCount = mpu.getFIFOCount();
 
   // check for overflow (this should never happen unless our code is too inefficient)
-  if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
+  if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024)
+  {
     // reset so we can continue cleanly
     mpu.resetFIFO();
     fifoCount = mpu.getFIFOCount();
+    count = 3;
     Serial.println(F("FIFO overflow!"));
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
-  } else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {
+  }
+  else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT))
+  {
     // wait for correct available data length, should be a VERY short wait
     while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
 
@@ -309,37 +323,44 @@ void loop() {
 //    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
     mpu.dmpGetFullData(&aaWorld, &aaReal, ypr, &gravity, euler, &q, &aa, fifoBuffer);
     //  print info
+    if (count == 0)
+    {
     Serial.print(q.w);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(q.x);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(q.y);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(q.z);
-    Serial.print(" ");
-    Serial.print(euler[0] * 180 / M_PI);
-    Serial.print(" ");
-    Serial.print(euler[1] * 180 / M_PI);
-    Serial.print(" ");
-    Serial.print(euler[2] * 180 / M_PI);
-    Serial.print(" ");
-    Serial.print(ypr[0] * 180 / M_PI);
-    Serial.print(" ");
-    Serial.print(ypr[1] * 180 / M_PI);
-    Serial.print(" ");
-    Serial.print(ypr[2] * 180 / M_PI);
-    Serial.print(" ");
-    Serial.print(aaReal.x);
-    Serial.print(" ");
-    Serial.print(aaReal.y);
-    Serial.print(" ");
-    Serial.print(aaReal.z);
-    Serial.print(" ");
+    Serial.println(F(" "));
+//    Serial.print(euler[0] * 180 / M_PI);
+//    Serial.print(F(" "));
+//    Serial.print(euler[1] * 180 / M_PI);
+//    Serial.print(F(" "));
+//    Serial.print(euler[2] * 180 / M_PI);
+//    Serial.print(F(" "));
+//    Serial.print(ypr[0] * 180 / M_PI);
+//    Serial.print(F(" "));
+//    Serial.print(ypr[1] * 180 / M_PI);
+//    Serial.print(F(" "));
+//    Serial.print(ypr[2] * 180 / M_PI);
+//    Serial.print(F(" "));
+//    Serial.print(aaReal.x);
+//    Serial.print(F(" "));
+//    Serial.print(aaReal.y);
+//    Serial.print(F(" "));
+//    Serial.print(aaReal.z);
+//    Serial.print(F(" "));
     Serial.print(aaWorld.x);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(aaWorld.y);
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.println(aaWorld.z);
+    }
+    else
+    { 
+      count = count - 1;
+    }
     
 //#ifdef OUTPUT_READABLE_QUATERNION
 //    // display quaternion values in easy matrix form: w x y z
@@ -403,9 +424,9 @@ void loop() {
 //    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
 //    Serial.print("aworld ");
 //    Serial.print(aaWorld.x);
-//    Serial.print(" ");
+//    Serial.print(F(" "));
 //    Serial.print(aaWorld.y);
-//    Serial.print(" ");
+//    Serial.print(F(" "));
 //    Serial.println(aaWorld.z);
 //#endif
 //
@@ -423,6 +444,8 @@ void loop() {
 //    teapotPacket[11]++; // packetCount, loops at 0xFF on purpose
 //#endif
 
+//count += 1;
+//Serial.println(count);
     // blink LED to indicate activity
     blinkState = !blinkState;
     digitalWrite(LED_PIN, blinkState);
